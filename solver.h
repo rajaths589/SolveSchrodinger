@@ -23,6 +23,7 @@ typedef struct parameters {
 	int max_iter;
 	int current_iter;
 	int n;			// number of wavefunctions to solve
+	int stop;
 } parameters;
 
 int loadParameters(char* filename, parameters* p);
