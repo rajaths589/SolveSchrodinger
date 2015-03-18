@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
-#include <potential.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_vector.h>
 #include <orthonormalizer.h>
+#include <wavefninit.h>
 
 #include "solver.h"
 
@@ -56,6 +56,12 @@ int loadParameters(parameters* p, char* filename)
 
 	p->current_iter = 0;
 	p->stop = 0;
+
+	//Define parameter decoding logic to decipher the init&op conditions.
+	p->inittype = RANDOM;
+	p->optype = HARMONIC;
+
+	fclose(fp);
 	return 0;
 }
 
@@ -244,12 +250,13 @@ void advanceImaginaryTime(parameters* p, stateset** s, operators* ops, fftw_plan
 		s->rms_nEnergyDelta = s->t_rms_nEnergyDelta;
 	}
 
-	calculateEnergyEigenValues(s);
+	ops->hamiltonian(s,p,ops->potential, ops->kinetic, plans);
 	if(s->rms_nEnergy <= s->tol*s->rms_energyExpectation)
 	{
 		s->stop = 1;
 	}
 }
+
 
 static fftw_plan* create_fftwplan(int xsize, int ysize, gsl_matrix_complex* m)
 {
@@ -259,4 +266,13 @@ static fftw_plan* create_fftwplan(int xsize, int ysize, gsl_matrix_complex* m)
 	fp[1] = fftw_plan_dft_2d(xsize, ysize, f, f, FFTW_BACKWARD,  FFTW_MESAURE);
 
 	return fp;
+}
+
+int solveSchrodingerEquation(parameters* p, char* outputFilename)
+{	
+	initialization initn = get_initalizationfn(p);
+	stateset* s = initializeSolver(p, initn);
+	operators* ops = init_ops(p);
+
+
 }

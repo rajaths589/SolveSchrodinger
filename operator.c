@@ -48,6 +48,21 @@ static void transform_to_positionspace(stateset* s, fftw_plan* fp)
 	}
 }
 
+static void transform_to_momentumspace_i(stateset* s, fftw_plan* fp, int i)
+{
+	fftw_complex* in;
+	in = (fftw_complex*) (s->eigenspectrum[i]->eigenfn->data);
+	fftw_execute_dft(fp[0], in , in);
+	gsl_matrix_complex_scale(s->eigenspectrum[i]->eigenfn, gsl_complex_rect((1.0/(s->eigenspectrum[k]->eigenfn->size1*s->eigenspectrum[k]->eigenfn->size2)),0));
+}
+
+static void transform_to_positionspace_i(stateset* s, fftw_plan* fp, int i)
+{
+	fftw_complex* in;
+	in = (fftw_complex*) (s->eigenspectrum[i]->eigenfn->data);
+	fftw_execute_dft(fp[1], in , in);	
+}
+
 static double reduceto2pi(double k)
 {
 	if(k>2*M_PI)
@@ -156,4 +171,71 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 			}
 		}
 	}
+}
+
+void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_plan* fp)
+{
+	double delH = 0.0;
+	gsl_complex energy;
+	gsl_complex t;
+	//gsl_matrix_complex* temp = gsl_matrix_complex_alloc(p->xsteps, p->ysteps);
+	int i,j,k;
+
+	for(k=0; k<s->n; k++)
+	{		
+		energy = gsl_complex_rect(0,0);
+		for(i=0; i<p->xsteps; i++)
+		{
+			for(j=0; j<p->ysteps; j++)
+			{
+				t = gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j);
+				t = gsl_complex_mul(t, gsl_complex_rect(potential(getX(p,i),getY(p,j)),0.0));
+				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
+				energy = gsl_complex_add(t,energy);
+			}
+		}
+
+		transform_to_momentumspace_i(s, fp, k);
+	
+		for(i=0; i<p->xsteps; i++)
+		{
+			for(j=0; j<p->ysteps; j++)
+			{
+				kx = i*2*M_PI/p->xsteps;
+				ky = j*2*M_PI/p->ysteps;
+
+				kx = reduceto2pi(kx);
+				ky = reduceto2pi(ky);
+
+				t = gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j);
+				t = gsl_complex_mul(t, gsl_complex_rect(kinetic(kx, ky),0.0));
+				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
+				energy = gsl_complex_add(t,energy);
+			}
+		}
+
+		transform_to_positionspace_i(s, fp, k);
+
+		s->eigenspectrum[k]->eigenval = GSL_REAL(energy);
+		delH += pow(s->eigenspectrum[k]->eigenval-s->eigenspectrum[k]->normalization_energy, 2);
+	}
+
+	delH = delH / s->n;
+	delH = sqrt(delH);
+
+	s->rms_energyExpectation = delH;
+}
+
+operators* init_ops(parameters* p)
+{
+	operators* op = (operators*) malloc(sizof(operators));
+	
+	//conditions can be added.
+	//I'm seting it to the implemented functions
+	op->potential = harmonic_potential;
+	op->kinetic = harmonic_kinetic;
+	op->hamiltonian = hamiltonian_4;
+	op->evolution = evolution_operator_4;
+
+	return op;
 }

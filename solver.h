@@ -3,6 +3,7 @@
 #include <gsl/gsl_complex.h>
 
 #include "state.h"
+#include "wavefninit.h"
 
 typedef struct parameters {
 	double timestep;
@@ -24,6 +25,9 @@ typedef struct parameters {
 	int current_iter;
 	int n;			// number of wavefunctions to solve
 	int stop;
+
+	init_types inittype;
+	operator_types optype;
 } parameters;
 
 int loadParameters(char* filename, parameters* p);

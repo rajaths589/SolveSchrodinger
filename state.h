@@ -13,8 +13,7 @@ typedef struct state {
 typedef struct stateset {
 	state** eigenspectrum;
 	state** trial_eigenspectrum;
-	int n;	// number of eigenstates
-	int correct;	// refers to which set of states has the more correct wavevectors
+	int n;	// number of eigenstates	
 
 	double rms_nEnergy;
 	double rms_nEnergyDelta;
