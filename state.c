@@ -34,20 +34,9 @@ void normalize(state* state)
 }
 
 void copy(stateset* set)
-{
-	
-	if(set->correct == 0)
-	{		
-		for(k=0;k< p->n;k++)
-		{
-			gsl_matrix_complex_memcpy(set->trial_eigenspectrum[k]->eigenfn, set->eigenspectrum[k]->eigenfn);
-		}
-	}
-	else
+{	
+	for(k=0;k< p->n;k++)
 	{
-		for(k=0;k< p->n;k++)
-		{
-			gsl_matrix_complex_memcpy(set->eigenspectrum[k]->eigenfn, set->trial_eigenspectrum[k]->eigenfn);
-		}	
+		gsl_matrix_complex_memcpy(set->trial_eigenspectrum[k]->eigenfn, set->eigenspectrum[k]->eigenfn);
 	}	
 }

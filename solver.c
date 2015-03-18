@@ -101,32 +101,25 @@ stateset* initializeSolver(parameters* p, double (*init_func) (double, double, d
 	return stateset;
 }
 
-//rewrite.
 void orthonormalize(stateset *s)
-{	
-	double rms_nEnergy = 0.0f;
-	double rms_nEnergyDelta = 0.0f;
+{
 	double t_rms_nEnergy = 0.0f;
 	double t_rms_nEnergyDelta = 0.0f;
-	
+
 	gsl_matrix_complex* overlap = gsl_matrix_complex_alloc(s->n, s->n);
 	int i,j;
+
+	gsl_matrix_complex *evec = gsl_matrix_complex_alloc(s->n,s->n);
+	gsl_vector_complex *eval = gsl_vector_complex_alloc(s->n);
+	gsl_eigen_hermv_workspace* w = gsl_eigen_hermv_workspace(s->n);
 
 	for(i=0; i<s->n;i++)
 	{
 		for(j=0;j<s->n;j++)
 		{
-			gsl_matrix_complex_set(overlap, i, j, dotproduct(s->eigenspectrum[i], s->eigenspectrum[j]);
+			gsl_matrix_complex_set(overlap, i, j, dotproduct(s->trial_eigenspectrum[i], s->trial_eigenspectrum[j]);
 		}
 	}
-
-	gsl_matrix_complex *evec = gsl_matrix_complex_alloc(s->n,s->n);
-	gsl_vector_complex *eval = gsl_vector_complex_alloc(s->n);
-
-	gsl_eigen_hermv_workspace* w = gsl_eigen_hermv_workspace(s->n);
-
-	gsl_eigen_hermv(overlap, eval, evec, w);
-	gsl_eigen_hermv_free(w);
 
 	gsl_matrix_complex** newvectors = (gsl_matrix_complex**) malloc(s->n * sizeof(gsl_matrix_complex*));
 	for(i=0; i<s->n; i++)
@@ -138,46 +131,7 @@ void orthonormalize(stateset *s)
 	gsl_complex eigenval;
 	gsl_vector_complex_view eigenvec_i;
 	gsl_matrix_complex tempMatrix = gsl_matrix_complex_alloc(s->eigenspectrum[0]->eigenfn->size1, s->eigenspectrum[0]->eigenfn->size2);
-	for(i=0;i<s->n;i++)
-	{
-		eigenval = gsl_vector_complex_get(eval, i);
-		eigenvec_i = gsl_matrix_complex_column(evec, i);
 
-		rms_nEnergy += pow((log(GSL_REAL(eigenval))/(-2.0*p->timestep)),2);
-		rms_nEnergyDelta += pow(s->eigenspectrum[i]->normalization_energy-(log(GSL_REAL(eigenval))/(-2.0*p->timestep)),2);
-		s->eigenspectrum[i]->normalization_energy = eigenval;
-
-		for(j=0; j<s->n;j++)
-		{
-			gsl_matrix_complex_memcpy(tempMatrix, s->eigenspectrum[j]->eigenfn);
-			gsl_matrix_complex_scale(tempMatrix, gsl_vector_complex_get(eigenvec_i,j));
-			gsl_matrix_complex_add(newvectors[i], tempMatrix);			
-		}
-		gsl_matrix_complex_scale(newvectors[i], gsl_complex_inverse(gsl_complex_sqrt_real(eigenval)));
-	}
-
-	for(i=0; i<s->n; i++)
-	{
-		gsl_matrix_complex_memcpy(s->eigenspectrum[i]->eigenfn, newvectors[i]);		
-		gsl_matrix_complex_set_zero(newvectors[i]);
-	}
-
-	rms_nEnergy /= s->n;
-	rms_nEnergy = sqrt(rms_nEnergy);
-	s->rms_nEnergy = rms_nEnergy;
-	rms_nEnergyDelta /= s->n;
-	rms_nEnergyDelta = sqrt(rms_nEnergyDelta);
-	s->rms_nEnergyDelta = rms_nEnergyDelta;
-
-	for(i=0; i<s->n;i++)
-	{
-		for(j=0;j<s->n;j++)
-		{
-			gsl_matrix_complex_set(overlap, i, j, dotproduct(s->trial_eigenspectrum[i], s->trial_eigenspectrum[j]);
-		}
-	}
-
-	w = gsl_eigen_hermv_workspace(s->n);
 	gsl_eigen_hermv(overlap, eval, evec, w);
 	gsl_eigen_hermv_free(w);
 
@@ -197,7 +151,7 @@ void orthonormalize(stateset *s)
 			gsl_matrix_complex_add(newvectors[i], tempMatrix);			
 		}
 		gsl_matrix_complex_scale(newvectors[i], gsl_complex_inverse(gsl_complex_sqrt_real(eigenval)));
-	}
+	}	
 
 	for(i=0; i<s->n; i++)
 	{
@@ -207,19 +161,21 @@ void orthonormalize(stateset *s)
 
 	t_rms_nEnergy /= s->n;
 	t_rms_nEnergy = sqrt(t_rms_nEnergy);
-	s->t_rms_nEnergy = t_rms_nEnergy;
 	t_rms_nEnergyDelta /= s->n;
 	t_rms_nEnergyDelta = sqrt(t_rms_nEnergyDelta);
+	s->t_rms_nEnergy = t_rms_nEnergy;
 	s->t_rms_nEnergyDelta = t_rms_nEnergyDelta;
 
 	free(newvectors);
 	gsl_matrix_complex_free(tempMatrix);
 	gsl_vector_complex_free(eigenvec_i);
+
 }
 
 void advanceImaginaryTime(parameters* p, stateset** s, operators* ops, fftw_plan* plans)
 {
 	p->current_iter += 1;
+	state** temp;
 
 	copy(s);
 	
@@ -228,18 +184,18 @@ void advanceImaginaryTime(parameters* p, stateset** s, operators* ops, fftw_plan
 
 	if((s->rms_nEnergy < s->t_rms_nEnergy) || (s->rms_nEnergyDelta < s->t_rms_nEnergyDelta))
 	{
-		s->correct = 0;
-		s->chi = sqrt(s->chi);		
+		s->chi = sqrt(s->chi);
 	}
 	else
 	{
-		s->correct = 1;
+		temp = s->eigenspectrum;
+		s->eigenspectrum = s->trial_eigenspectrum;
+		s->trial_eigenspectrum = temp;		
 		s->timestep *= s->chi;
 		s->chi = pow(s->chi,2);
+		s->rms_nEnergy = s->t_rms_nEnergy;
+		s->rms_nEnergyDelta = s->t_rms_nEnergyDelta;
 	}
-
-
-
 }
 
 static fftw_plan* create_fftwplan(int xsize, int ysize, gsl_matrix_complex* m)
