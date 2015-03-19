@@ -33,9 +33,9 @@ typedef struct parameters {
 int loadParameters(char* filename, parameters* p);
 stateset* initializeSolver(parameters* p, double (*init_func) (double, double, double, double, int));
 int solveSchrodingerEquation(parameters* p, char* outputFilename);
-void advanceImaginaryTime(parameters* p, stateset** s);
+void advanceImaginaryTime(parameters* p, stateset* s, operators* ops, fftw_plan* plans);
 inline double getX(parameters* p, int i);
-inline double getX(parameters* p, int j);
+inline double gety(parameters* p, int j);
 void orthonormalize(stateset *s);
 
 #endif

@@ -233,7 +233,7 @@ operators* init_ops(parameters* p)
 	//conditions can be added.
 	//I'm seting it to the implemented functions
 	op->potential = harmonic_potential;
-	op->kinetic = harmonic_kinetic;
+	op->kinetic = kinetic_2d;
 	op->hamiltonian = hamiltonian_4;
 	op->evolution = evolution_operator_4;
 

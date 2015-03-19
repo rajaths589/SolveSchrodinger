@@ -3,7 +3,6 @@
 #include <gsl/gsl_complex_math.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_vector.h>
-#include <orthonormalizer.h>
 #include <wavefninit.h>
 
 #include "solver.h"
@@ -20,7 +19,7 @@ inline double getY(parameters* p, int j)
 
 int loadParameters(parameters* p, char* filename)
 {
-	FILE* configure_fp = fopen(filename, "r");
+	FILE* configure_fp = fopen(filename, "r+");
 
 	if(fopen == NULL)
 		return 1;
@@ -51,8 +50,8 @@ int loadParameters(parameters* p, char* filename)
 	getline(&line, &lsize, configure_fp);
 	sscanf(line, "%d", &(p->n));
 
-	p->xres = p->xMax / ((p->xsteps)-1);
-	p->xres = p->yMax / ((p->ysteps)-1);
+	p->xres = (2*p->xMax) / ((p->xsteps)-1);
+	p->yres = (2*p->yMax) / ((p->ysteps)-1);
 
 	p->current_iter = 0;
 	p->stop = 0;
@@ -225,10 +224,9 @@ void orthonormalize(stateset *s)
 
 }
 
-void advanceImaginaryTime(parameters* p, stateset** s, operators* ops, fftw_plan* plans)
+void advanceImaginaryTime(parameters* p, stateset* s, operators* ops, fftw_plan* plans)
 {
-	p->current_iter += 1;
-	state** temp;
+	p->current_iter += 1;	
 
 	copy(s);
 	
@@ -243,7 +241,7 @@ void advanceImaginaryTime(parameters* p, stateset** s, operators* ops, fftw_plan
 	{
 		temp = s->eigenspectrum;
 		s->eigenspectrum = s->trial_eigenspectrum;
-		s->trial_eigenspectrum = temp;		
+		s->trial_eigenspectrum = temp;
 		s->timestep *= s->chi;
 		s->chi = pow(s->chi,2);
 		s->rms_nEnergy = s->t_rms_nEnergy;
@@ -273,6 +271,28 @@ int solveSchrodingerEquation(parameters* p, char* outputFilename)
 	initialization initn = get_initalizationfn(p);
 	stateset* s = initializeSolver(p, initn);
 	operators* ops = init_ops(p);
+	fftw_plan* fpw = create_fftwplan(p->xsteps, p->ysteps, s->eigenspectrum[0]->eigenfn);
+	while(p->current_iter <= p->max_iter && p->stop==0)
+	{
+		advanceImaginaryTime(p, s, ops, fpw);
+	}
+	
+	//Write a better print function
+	int i;
+	for(i=0;i<s->n;i++)
+	{
+		printf("%d\n",s->eigenspectrum[i]->eigenval);
+	}
 
+	free(ops);
+	fftw_destroy_plan(fpw[0]);
+	fftw_destroy_plan(fpw[1]);
+	free(fpw);
+}
 
+int main()
+{
+	parameters* p = (parameters*) malloc(sizeof(parameters));
+	loadParameters(p, "config.txt");
+	solveSchrodingerEquation(p,"solution.txt");
 }
