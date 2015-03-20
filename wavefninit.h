@@ -1,13 +1,8 @@
 #ifndef WAVEFN_INIT
 #define WAVEFN_INIT
-#include "solver.h"
+#include "parameters.h"
 
-typedef enum
-{
-	RANDOM	
-} init_types;
-
-typedef double (initialization*)(double x, double y, double xMax, double yMax, int n);
+typedef double (*initialization)(double , double , double , double , int);
 initialization get_initalizationfn(parameters* p);
 
 #endif

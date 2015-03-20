@@ -2,11 +2,6 @@
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
 
-void normalize(state* eigenfn)
-{
-
-}
-
 //computes <A|B>
 gsl_complex dotproduct(state* stateA, state* stateB)
 {
@@ -14,9 +9,9 @@ gsl_complex dotproduct(state* stateA, state* stateB)
 
 	int i,j;
 
-	for(i=0; i<stateA->eigenfn.size1; i++)
+	for(i=0; i<stateA->eigenfn->size1; i++)
 	{
-		for(j=0; j<stateA->eigenfn.size2; j++)
+		for(j=0; j<stateA->eigenfn->size2; j++)
 		{
 			result = gsl_complex_add(result, (gsl_complex_mul(gsl_complex_conjugate(gsl_matrix_complex_get(stateA->eigenfn,i,j)),gsl_matrix_complex_get(stateB->eigenfn,i,j))));
 		}
@@ -35,7 +30,8 @@ void normalize(state* state)
 
 void copy(stateset* set)
 {	
-	for(k=0;k< p->n;k++)
+	int k;
+	for(k=0;k< set->n;k++)
 	{
 		gsl_matrix_complex_memcpy(set->trial_eigenspectrum[k]->eigenfn, set->eigenspectrum[k]->eigenfn);
 	}	

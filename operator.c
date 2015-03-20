@@ -14,7 +14,7 @@ double harmonic_potential(double x, double y)
 
 double kinetic_2d(double kx, double ky)
 {
-	return ((kx*k_x) + (ky*ky)/2);
+	return ((kx*kx) + (ky*ky)/2);
 }
 
 static void transform_to_momentumspace(stateset* s, fftw_plan* fp)
@@ -53,7 +53,7 @@ static void transform_to_momentumspace_i(stateset* s, fftw_plan* fp, int i)
 	fftw_complex* in;
 	in = (fftw_complex*) (s->eigenspectrum[i]->eigenfn->data);
 	fftw_execute_dft(fp[0], in , in);
-	gsl_matrix_complex_scale(s->eigenspectrum[i]->eigenfn, gsl_complex_rect((1.0/(s->eigenspectrum[k]->eigenfn->size1*s->eigenspectrum[k]->eigenfn->size2)),0));
+	gsl_matrix_complex_scale(s->eigenspectrum[i]->eigenfn, gsl_complex_rect((1.0/(s->eigenspectrum[i]->eigenfn->size1*s->eigenspectrum[i]->eigenfn->size2)),0));
 }
 
 static void transform_to_positionspace_i(stateset* s, fftw_plan* fp, int i)
@@ -72,10 +72,10 @@ static double reduceto2pi(double k)
 }
 
 // |delV|^2 is calculated
-static double finitedifference_gradient(op potential, double x, double y, double xres. double yres)
+static double finitedifference_gradient(op potential, double x, double y, double xres, double yres)
 {
 	double a = (potential(x+(xres/2), y) - potential(x-(xres/2), y))/xres;
-	double b = (potential(x, y+(yres/2)) - potential(x, y-(yres/2))/yres;
+	double b = (potential(x, y+(yres/2)) - potential(x, y-(yres/2)))/yres;
 
 	return sqrt(a*a + b*b);
 }
@@ -90,10 +90,10 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 	{
 		for(i=0;i<p->xsteps;i++)
 		{
-			for(j=0;j<y->steps;j++)
+			for(j=0;j<p->ysteps;j++)
 			{
-				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/6.0))*potential(getX(i),getY(j)))));
-				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/6.0))*potential(getX(i),getY(j)))));
+				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/6.0))*potential(getX(p,i),getY(p,j)))));
+				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/6.0))*potential(getX(p,i),getY(p,j)))));
 			}
 		}
 	}
@@ -114,7 +114,7 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 				kx = reduceto2pi(kx);
 				ky = reduceto2pi(ky);
 
-				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/2.0))*kinetic(kx, ky));
+				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/2.0))*kinetic(kx, ky))));
 				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/2.0))*kinetic(kx, ky))));
 			}
 		}
@@ -127,10 +127,10 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 	{
 		for(i=0;i<p->xsteps;i++)
 		{
-			for(j=0;j<y->steps;j++)
+			for(j=0;j<p->ysteps;j++)
 			{
-				x = getX(i);
-				y = getY(j);
+				x = getX(p,i);
+				y = getY(p,j);
 				pot = potential(x,y) + (finitedifference_gradient(potential, x, y, p->xres, p->yres)*(p->timestep*p->timestep)/48.0);
 				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*2.0/3.0))*pot)));
 				
@@ -153,7 +153,7 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 				kx = reduceto2pi(kx);
 				ky = reduceto2pi(ky);
 
-				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/2.0))*kinetic(kx, ky));
+				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/2.0))*kinetic(kx, ky))));
 				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/2.0))*kinetic(kx, ky))));
 			}
 		}
@@ -164,10 +164,10 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 	{
 		for(i=0;i<p->xsteps;i++)
 		{
-			for(j=0;j<y->steps;j++)
+			for(j=0;j<p->ysteps;j++)
 			{
-				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/6.0))*potential(getX(i),getY(j)))));
-				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/6.0))*potential(getX(i),getY(j)))));
+				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep/6.0))*potential(getX(p,i),getY(p,j)))));
+				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*p->chi/6.0))*potential(getX(p,i),getY(p,j)))));
 			}
 		}
 	}
@@ -180,6 +180,7 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 	gsl_complex t;
 	//gsl_matrix_complex* temp = gsl_matrix_complex_alloc(p->xsteps, p->ysteps);
 	int i,j,k;
+	double kx,ky;
 
 	for(k=0; k<s->n; k++)
 	{		
@@ -190,12 +191,12 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 			{
 				t = gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j);
 				t = gsl_complex_mul(t, gsl_complex_rect(potential(getX(p,i),getY(p,j)),0.0));
-				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
+				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
 				energy = gsl_complex_add(t,energy);
 			}
 		}
 
-		transform_to_momentumspace_i(s, fp, k);
+		transform_to_momentumspace_i(s, fp, k);		
 	
 		for(i=0; i<p->xsteps; i++)
 		{
@@ -209,7 +210,7 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 
 				t = gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j);
 				t = gsl_complex_mul(t, gsl_complex_rect(kinetic(kx, ky),0.0));
-				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
+				t = gsl_complex_mul(t, gsl_complex_conjugate(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn, i, j)));
 				energy = gsl_complex_add(t,energy);
 			}
 		}
@@ -228,7 +229,7 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 
 operators* init_ops(parameters* p)
 {
-	operators* op = (operators*) malloc(sizof(operators));
+	operators* op = (operators*) malloc(sizeof(operators));
 	
 	//conditions can be added.
 	//I'm seting it to the implemented functions

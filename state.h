@@ -2,6 +2,7 @@
 #define ITP_STATESET
 
 #include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_matrix.h>
 
 typedef struct state {
 	gsl_matrix_complex* eigenfn;
@@ -22,7 +23,6 @@ typedef struct stateset {
 	double rms_energyExpectation;
 } stateset;
 
-void normalize(state* eigenfn);
 gsl_complex dotproduct(state* stateA, state* stateB);
 
 stateset* createcopy(stateset* set);
