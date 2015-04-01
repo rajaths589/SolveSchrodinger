@@ -41,10 +41,10 @@ static void transform_to_positionspace(stateset* s, fftw_plan* fp)
 	for(k=0; k<s->n; k++)
 	{
 		in = (fftw_complex*) (s->eigenspectrum[k]->eigenfn->data);
-		fftw_execute_dft(fp[1], in , in);		
+		fftw_execute_dft(fp[1], in , in);
 
 		in = (fftw_complex*) (s->trial_eigenspectrum[k]->eigenfn->data);
-		fftw_execute_dft(fp[1], in , in);		
+		fftw_execute_dft(fp[1], in , in);
 	}
 }
 
@@ -60,7 +60,7 @@ static void transform_to_positionspace_i(stateset* s, fftw_plan* fp, int i)
 {
 	fftw_complex* in;
 	in = (fftw_complex*) (s->eigenspectrum[i]->eigenfn->data);
-	fftw_execute_dft(fp[1], in , in);	
+	fftw_execute_dft(fp[1], in , in);
 }
 
 static double reduceto2pi(double k)
@@ -103,7 +103,7 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 
 	int kx, ky;
 	for(k=0;k<s->n;k++)
-	{		
+	{
 		for(i=0; i<p->xsteps; i++)
 		{
 			for(j=0; j<p->ysteps; j++)
@@ -133,7 +133,7 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 				y = getY(p,j);
 				pot = potential(x,y) + (finitedifference_gradient(potential, x, y, p->xres, p->yres)*(p->timestep*p->timestep)/48.0);
 				gsl_matrix_complex_set(s->eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*2.0/3.0))*pot)));
-				
+
 				pot = potential(x,y) + (finitedifference_gradient(potential, x, y, p->xres, p->yres)*(p->timestep*p->timestep*p->chi*p->chi)/48.0);
 				gsl_matrix_complex_set(s->trial_eigenspectrum[k]->eigenfn, i, j, gsl_complex_mul_real(gsl_matrix_complex_get(s->trial_eigenspectrum[k]->eigenfn,i,j),exp((-(p->timestep*2.0*p->chi/3.0))*pot)));
 			}
@@ -142,7 +142,7 @@ void evolution_operator_4(stateset* s, parameters* p, op potential, op kinetic, 
 
 	transform_to_momentumspace(s,fp);
 	for(k=0;k<s->n;k++)
-	{		
+	{
 		for(i=0; i<p->xsteps; i++)
 		{
 			for(j=0; j<p->ysteps; j++)
@@ -183,7 +183,7 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 	double kx,ky;
 
 	for(k=0; k<s->n; k++)
-	{		
+	{
 		energy = gsl_complex_rect(0,0);
 		for(i=0; i<p->xsteps; i++)
 		{
@@ -196,8 +196,8 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 			}
 		}
 
-		transform_to_momentumspace_i(s, fp, k);		
-	
+		transform_to_momentumspace_i(s, fp, k);
+
 		for(i=0; i<p->xsteps; i++)
 		{
 			for(j=0; j<p->ysteps; j++)
@@ -230,7 +230,7 @@ void hamiltonian_4(stateset* s, parameters* p, op potential, op kinetic, fftw_pl
 operators* init_ops(parameters* p)
 {
 	operators* op = (operators*) malloc(sizeof(operators));
-	
+
 	//conditions can be added.
 	//I'm seting it to the implemented functions
 	op->potential = harmonic_potential;

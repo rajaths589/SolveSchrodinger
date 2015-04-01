@@ -1,6 +1,8 @@
 #include "state.h"
 #include <gsl/gsl_complex.h>
 #include <gsl/gsl_complex_math.h>
+#include <gsl/gsl_matrix.h>
+#include <stdio.h>
 
 //computes <A|B>
 gsl_complex dotproduct(state* stateA, state* stateB)
@@ -29,10 +31,24 @@ void normalize(state* state)
 }
 
 void copy(stateset* set)
-{	
+{
 	int k;
 	for(k=0;k< set->n;k++)
 	{
 		gsl_matrix_complex_memcpy(set->trial_eigenspectrum[k]->eigenfn, set->eigenspectrum[k]->eigenfn);
-	}	
+		set->trial_eigenspectrum[k]->eigenval = set->eigenspectrum[k]->eigenval;
+		set->trial_eigenspectrum[k]->normalization_energy = set->eigenspectrum[k]->normalization_energy;
+	}
+}
+
+void printWavefunctions(stateset* set)
+{
+	FILE* f = fopen("wfns.txt","a");
+	int i;
+	for(i=0; i<set->n;i++)
+	{
+		gsl_matrix_complex_fwrite(f, set->eigenspectrum[i]->eigenfn);
+		fprintf(f, "\n\n\n");
+	}
+	fclose(f);
 }

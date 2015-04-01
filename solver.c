@@ -68,7 +68,7 @@ int loadParameters(parameters* p, char* filename)
 
 stateset* initializeSolver(parameters* p, double (*init_func) (double, double, double, double, int))
 {
-	stateset* wavefns = (stateset*) malloc(sizeof(stateset));	
+	stateset* wavefns = (stateset*) malloc(sizeof(stateset));
 	wavefns->eigenspectrum = (state**) malloc(sizeof(state*)* p->n);
 	wavefns->trial_eigenspectrum = (state**) malloc(sizeof(state*)* p->n);
 
@@ -81,7 +81,7 @@ stateset* initializeSolver(parameters* p, double (*init_func) (double, double, d
 
 	int i,j,k;
 
-	for(i=0; i<p->n; i++)		
+	for(i=0; i<p->n; i++)
 	{
 		wavefns->eigenspectrum[i] = (state*) malloc(sizeof(state));
 		wavefns->eigenspectrum[i]->eigenfn = gsl_matrix_complex_alloc(p->xsteps, p->ysteps);
@@ -109,6 +109,25 @@ stateset* initializeSolver(parameters* p, double (*init_func) (double, double, d
 	return wavefns;
 }
 
+/*
+static gsl_complex findNorm(gsl_matrix_complex* a)
+{
+	gsl_complex t = gsl_complex_rect(0.0, 0.0);
+	gsl_complex temp;
+	int i,j;
+	for(i=0;i<a->size1;i++)
+	{
+		for(j=0;j<a->size2;j++)
+		{
+			temp = gsl_matrix_complex_get(a,i,j);
+			t = gsl_complex_add(t, gsl_complex_mul(gsl_complex_conjugate(temp),temp));
+		}
+	}
+
+	return t;
+}
+*/
+
 void orthonormalize(stateset *s, parameters* p)
 {
 	double rms_nEnergy = 0.0f;
@@ -125,7 +144,7 @@ void orthonormalize(stateset *s, parameters* p)
 		{
 			gsl_matrix_complex_set(overlap, i, j, dotproduct(s->eigenspectrum[i], s->eigenspectrum[j]));
 		}
-	}	
+	}
 
 	gsl_matrix_complex *evec = gsl_matrix_complex_alloc(s->n,s->n);
 	gsl_vector *eval = gsl_vector_alloc(s->n);
@@ -202,15 +221,15 @@ void orthonormalize(stateset *s, parameters* p)
 		{
 			gsl_matrix_complex_memcpy(tempMatrix, s->trial_eigenspectrum[j]->eigenfn);
 			gsl_matrix_complex_scale(tempMatrix, gsl_vector_complex_get(&eigenvec_i.vector,j));
-			gsl_matrix_complex_add(newvectors[i], tempMatrix);			
+			gsl_matrix_complex_add(newvectors[i], tempMatrix);
 		}
 		gsl_matrix_complex_scale(newvectors[i], gsl_complex_rect((1.0/sqrt(eigenval)),0.0));
-	}	
+	}
 
 	for(i=0; i<s->n; i++)
 	{
 		gsl_matrix_complex_memcpy(s->trial_eigenspectrum[i]->eigenfn, newvectors[i]);
-		gsl_matrix_complex_free(newvectors[i]);		
+		gsl_matrix_complex_free(newvectors[i]);
 	}
 
 	t_rms_nEnergy /= s->n;
@@ -231,10 +250,10 @@ void orthonormalize(stateset *s, parameters* p)
 void advanceImaginaryTime(parameters* p, stateset* s, operators* ops, fftw_plan* plans)
 {
 	state** temp;
-	p->current_iter += 1;	
+	p->current_iter += 1;
 
 	copy(s);
-	
+
 	ops->evolution(s, p, ops->potential, ops->kinetic, plans);
 	orthonormalize(s, p);
 
@@ -272,21 +291,26 @@ static fftw_plan* create_fftwplan(int xsize, int ysize, gsl_matrix_complex* m)
 }
 
 int solveSchrodingerEquation(parameters* p, char* outputFilename)
-{	
+{
 	initialization initn = get_initalizationfn(p);
 	stateset* s = initializeSolver(p, initn);
 	operators* ops = init_ops(p);
-	fftw_plan* fpw = create_fftwplan(p->xsteps, p->ysteps, s->eigenspectrum[0]->eigenfn);
+	gsl_matrix_complex* mtrx = gsl_matrix_complex_alloc(p->xsteps, p->ysteps);
+	fftw_plan* fpw = create_fftwplan(p->xsteps, p->ysteps, mtrx);
+	//printWavefunctions(s);
+	gsl_matrix_complex_free(mtrx);
 	while(p->current_iter <= p->max_iter && p->stop==0)
 	{
 		advanceImaginaryTime(p, s, ops, fpw);
+		//printWavefunctions(s);
 	}
-	
+
 	//Write a better print function
 	int i;
 	for(i=0;i<s->n;i++)
 	{
-		printf("%d\n",s->eigenspectrum[i]->eigenval);
+		printf("%lf\n",s->eigenspectrum[i]->eigenval);
+		printf("\n%d\n",p->current_iter);
 	}
 
 	free(ops);

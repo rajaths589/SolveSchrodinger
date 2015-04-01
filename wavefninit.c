@@ -4,12 +4,13 @@
 
 double random_init(double x, double y, double xMax, double yMax, int n)
 {
-	srand(time(NULL));
-	return (double)rand()/15.0;
+	int r = rand()%100;
+	return r/100.00;
 }
 
 initialization get_initalizationfn(parameters* p)
 {
 	//implement decoding logic later
+	srand(time(NULL));
 	return random_init;
 }

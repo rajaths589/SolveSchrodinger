@@ -14,7 +14,7 @@ typedef struct state {
 typedef struct stateset {
 	state** eigenspectrum;
 	state** trial_eigenspectrum;
-	int n;	// number of eigenstates	
+	int n;	// number of eigenstates
 
 	double rms_nEnergy;
 	double rms_nEnergyDelta;
@@ -25,6 +25,7 @@ typedef struct stateset {
 
 gsl_complex dotproduct(state* stateA, state* stateB);
 
+void printWavefunctions(stateset* set);
 stateset* createcopy(stateset* set);
 
 #endif
