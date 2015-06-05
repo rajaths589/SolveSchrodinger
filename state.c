@@ -30,7 +30,7 @@ void normalize(state* state)
 	gsl_matrix_complex_scale(state->eigenfn, norm);
 }
 
-void copy(stateset* set)
+void createcopy(stateset* set)
 {
 	int k;
 	for(k=0;k< set->n;k++)

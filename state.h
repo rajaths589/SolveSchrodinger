@@ -26,6 +26,6 @@ typedef struct stateset {
 gsl_complex dotproduct(state* stateA, state* stateB);
 
 void printWavefunctions(stateset* set);
-stateset* createcopy(stateset* set);
+void createcopy(stateset* set);
 
 #endif

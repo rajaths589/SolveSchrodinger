@@ -252,7 +252,7 @@ void advanceImaginaryTime(parameters* p, stateset* s, operators* ops, fftw_plan*
 	state** temp;
 	p->current_iter += 1;
 
-	copy(s);
+	createcopy(s);
 
 	ops->evolution(s, p, ops->potential, ops->kinetic, plans);
 	orthonormalize(s, p);
