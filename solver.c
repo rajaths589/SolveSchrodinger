@@ -8,6 +8,7 @@
 #include "wavefninit.h"
 #include "solver.h"
 #include "operator.h"
+#include <string.h>
 
 inline double getX(parameters* p, int i)
 {
@@ -21,7 +22,7 @@ inline double getY(parameters* p, int j)
 
 int loadParameters(parameters* p, char* filename)
 {
-	FILE* configure_fp = fopen(filename, "r+");
+	FILE* configure_fp = fopen(filename, "r");
 
 	if(fopen == NULL)
 		return 1;
@@ -310,7 +311,7 @@ int solveSchrodingerEquation(parameters* p, char* outputFilename)
 	for(i=0;i<s->n;i++)
 	{
 		printf("%lf\n",s->eigenspectrum[i]->eigenval);
-		printf("\n%d\n",p->current_iter);
+		//printf("\n%d\n",p->current_iter);
 	}
 
 	free(ops);
