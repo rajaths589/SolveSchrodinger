@@ -1,5 +1,5 @@
 all: operator.o state.o wavefninit.o solver.o
-	gcc -g operator.o state.o wavefninit.o solver.o -o soursugar.o -lm -lgsl -lfftw3
+	gcc -g operator.o state.o wavefninit.o solver.o -o soursugar.o -lgsl -lgslcblas -lm -lfftw3
 
 operator.o: operator.c
 	gcc -g -c operator.c
